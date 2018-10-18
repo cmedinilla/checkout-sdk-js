@@ -9,7 +9,7 @@ import { PartialDeep } from '../types';
 export default function mergeOrPush<T extends object>(
     array: T[],
     item: T,
-    predicate: ((item: T) => boolean) | PartialDeep<T>
+    predicate: any
 ): T[] {
     const index = findIndex(array, typeof predicate === 'object' ? pickBy(predicate) : predicate);
     const newArray = [...array];
