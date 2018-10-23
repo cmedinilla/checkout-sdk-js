@@ -41,13 +41,9 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
             return super.initialize(options);
         }
 
-        return Promise.all(
-            [
-                this._store.dispatch(this._paymentMethodActionCreator.loadPaymentMethod(methodId)),
-                this._store.dispatch(this._checkoutActionCreator.loadDefaultCheckout()),
-            ]
-        ).then(([statePayment, stateCheckout]) => {
-                this._paymentMethod = statePayment.paymentMethods.getPaymentMethod(methodId);
+        return this._store.dispatch(this._checkoutActionCreator.loadDefaultCheckout())
+        .then(stateCheckout => {
+                this._paymentMethod = stateCheckout.paymentMethods.getPaymentMethod(methodId);
                 if (!this._paymentMethod || !this._paymentMethod.initializationData.checkoutId) {
                     throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
                 }
@@ -85,9 +81,9 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
 
     private _createSignInButton(masterpassOptions: MasterpassButtonInitializeOptions): void {
         const { container } = masterpassOptions;
-        const buttoncontainer = document.querySelector(`#${container}`);
+        const buttonContainer = document.querySelector(`#${container}`);
 
-        if (!buttoncontainer) {
+        if (!buttonContainer) {
             throw new Error('Need a container to place the button');
         }
 
@@ -95,7 +91,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
 
         button.type = 'image';
         button.src = 'https://static.masterpass.com/dyn/img/btn/global/mp_chk_btn_160x037px.svg';
-        buttoncontainer.appendChild(button);
+        buttonContainer.appendChild(button);
         this._signInButton = button;
         this._signInButton.addEventListener('click', this._handleWalletButtonClick);
     }
@@ -135,7 +131,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
 
     private get checkout(): Checkout {
         if (!this._checkout) {
-            throw new MissingDataError(MissingDataErrorType.MissingCart);
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
 
         return this._checkout;
