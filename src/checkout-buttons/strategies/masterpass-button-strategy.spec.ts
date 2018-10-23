@@ -13,7 +13,7 @@ import {
 import { getCheckout, getCheckoutState } from '../../checkout/checkouts.mock';
 import { InvalidArgumentError, MissingDataError } from '../../common/error/errors';
 import { ConfigActionCreator, ConfigRequestSender } from '../../config';
-import { PaymentMethod, PaymentMethodActionCreator, PaymentMethodRequestSender } from '../../payment';
+import { PaymentMethod } from '../../payment';
 import { getMasterpass, getPaymentMethodsState } from '../../payment/payment-methods.mock';
 import { Masterpass, MasterpassScriptLoader } from '../../payment/strategies/masterpass';
 import { getMasterpassScriptMock } from '../../payment/strategies/masterpass/masterpass.mock';
@@ -24,7 +24,6 @@ describe('MasterpassCustomerStrategy', () => {
     let container: HTMLDivElement;
     let masterpass: Masterpass;
     let masterpassScriptLoader: MasterpassScriptLoader;
-    let paymentMethodActionCreator: PaymentMethodActionCreator;
     let checkoutActionCreator: CheckoutActionCreator;
     let paymentMethodMock: PaymentMethod;
     let checkoutMock: Checkout;
@@ -67,10 +66,6 @@ describe('MasterpassCustomerStrategy', () => {
         jest.spyOn(masterpassScriptLoader, 'load')
             .mockReturnValue(Promise.resolve(masterpass));
 
-        paymentMethodActionCreator = new PaymentMethodActionCreator(
-            new PaymentMethodRequestSender(requestSender)
-        );
-
         checkoutActionCreator = new CheckoutActionCreator(
             new CheckoutRequestSender(requestSender),
             new ConfigActionCreator(new ConfigRequestSender(requestSender))
@@ -79,7 +74,6 @@ describe('MasterpassCustomerStrategy', () => {
         strategy = new MasterpassButtonStrategy(
             store,
             checkoutActionCreator,
-            paymentMethodActionCreator,
             masterpassScriptLoader
         );
 
