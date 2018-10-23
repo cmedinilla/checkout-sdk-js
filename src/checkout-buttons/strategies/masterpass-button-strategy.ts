@@ -1,5 +1,5 @@
 import { CheckoutButtonInitializeOptions, CheckoutButtonOptions } from '../';
-import { Checkout, CheckoutActionCreator, CheckoutStore } from '../../checkout';
+import { Checkout, CheckoutActionCreator, CheckoutStore, InternalCheckoutSelectors } from '../../checkout';
 import {
     InvalidArgumentError,
     MissingDataError,
@@ -20,8 +20,8 @@ import { CheckoutButtonStrategy, MasterpassButtonInitializeOptions } from './';
 export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
     private _masterpassClient?: Masterpass;
     private _signInButton?: HTMLElement;
-    private _paymentMethod?: PaymentMethod;
-    private _checkout?: Checkout;
+    private _stateCheckout?: InternalCheckoutSelectors;
+    private _methodId?: string;
 
     constructor(
         private _store: CheckoutStore,
@@ -37,6 +37,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
         if (!masterpassOptions || !methodId) {
             throw new InvalidArgumentError('Unable to proceed because "options.masterpass" argument is not provided.');
         }
+        this._methodId = methodId;
 
         if (this._isInitialized) {
             return super.initialize(options);
@@ -44,17 +45,9 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
 
         return this._store.dispatch(this._checkoutActionCreator.loadDefaultCheckout())
         .then(stateCheckout => {
-                this._paymentMethod = stateCheckout.paymentMethods.getPaymentMethod(methodId);
-                if (!this._paymentMethod || !this._paymentMethod.initializationData.checkoutId) {
-                    throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
-                }
+                this._stateCheckout = stateCheckout;
 
-                this._checkout = stateCheckout.checkout.getCheckout();
-                if (!this._checkout || !this._checkout.cart.id) {
-                    throw new MissingDataError(MissingDataErrorType.MissingCart);
-                }
-
-                return this._masterpassScriptLoader.load(this._paymentMethod.config.testMode)
+                return this._masterpassScriptLoader.load(this._getPaymentMethod().config.testMode)
                     .then(masterpass => {
                         this._masterpassClient = masterpass;
                         this._createSignInButton(masterpassOptions);
@@ -67,9 +60,6 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
         if (!this._isInitialized) {
             return super.deinitialize(options);
         }
-
-        this._paymentMethod = undefined;
-        this._checkout = undefined;
 
         if (this._signInButton && this._signInButton.parentNode) {
             this._signInButton.removeEventListener('click', this._handleWalletButtonClick);
@@ -98,8 +88,8 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
     }
 
     private _createMasterpassPayload(): MasterpassCheckoutOptions {
-        const paymentMethod = this._getpaymentMethod();
-        const checkout = this._getcheckout();
+        const paymentMethod = this._getPaymentMethod();
+        const checkout = this._getCheckout();
 
         return {
             checkoutId: paymentMethod.initializationData.checkoutId,
@@ -114,31 +104,45 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
     @bind
     private _handleWalletButtonClick(): void  {
         const payload = this._createMasterpassPayload();
-        this._getmasterpassClient().checkout(payload);
+        this._getMasterpassClient().checkout(payload);
     }
 
-    private _getmasterpassClient(): Masterpass {
+    private _getMasterpassClient(): Masterpass {
         if (!this._masterpassClient) {
-            throw new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized);
+            throw new NotInitializedError(NotInitializedErrorType.CheckoutButtonNotInitialized);
         }
 
         return this._masterpassClient;
     }
 
-    private _getpaymentMethod(): PaymentMethod {
-        if (!this._paymentMethod) {
-            throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
+    private _getPaymentMethod(): PaymentMethod {
+        if (!this._methodId) {
+            throw new InvalidArgumentError();
         }
 
-        return this._paymentMethod;
-    }
-
-    private _getcheckout(): Checkout {
-        if (!this._checkout) {
+        if (!this._stateCheckout) {
             throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
 
-        return this._checkout;
+        const paymentMethod = this._stateCheckout.paymentMethods.getPaymentMethod(this._methodId);
+        if (!paymentMethod || !paymentMethod.initializationData.checkoutId) {
+            throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
+        }
+
+        return paymentMethod;
+    }
+
+    private _getCheckout(): Checkout {
+        if (!this._stateCheckout) {
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
+        }
+
+        const checkout = this._stateCheckout.checkout.getCheckout();
+        if (!checkout || checkout.cart.id) {
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
+        }
+
+        return checkout;
     }
 
 }
