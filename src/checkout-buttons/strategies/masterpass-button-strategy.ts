@@ -24,7 +24,6 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
     constructor(
         private _store: CheckoutStore,
         private _checkoutActionCreator: CheckoutActionCreator,
-        private _paymentMethodActionCreator: PaymentMethodActionCreator,
         private _masterpassScriptLoader: MasterpassScriptLoader
     ) {
         super();
@@ -98,11 +97,11 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
 
     private _createMasterpassPayload(): MasterpassCheckoutOptions {
         return {
-            checkoutId: this.paymentMethod.initializationData.checkoutId,
-            allowedCardTypes: this.paymentMethod.initializationData.allowedCardTypes,
-            amount: this.checkout.cart.cartAmount.toString(),
-            currency: this.checkout.cart.currency.code,
-            cartId: this.checkout.cart.id,
+            checkoutId: this._getpaymentMethod().initializationData.checkoutId,
+            allowedCardTypes: this._getpaymentMethod().initializationData.allowedCardTypes,
+            amount: this._getcheckout().cart.cartAmount.toString(),
+            currency: this._getcheckout().cart.currency.code,
+            cartId: this._getcheckout().cart.id,
             suppressShippingAddress: true,
         };
     }
@@ -110,10 +109,10 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
     @bind
     private _handleWalletButtonClick(): void  {
         const payload = this._createMasterpassPayload();
-        this.masterpassClient.checkout(payload);
+        this._getmasterpassClient().checkout(payload);
     }
 
-    private get masterpassClient(): Masterpass {
+    private _getmasterpassClient(): Masterpass {
         if (!this._masterpassClient) {
             throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
         }
@@ -121,7 +120,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
         return this._masterpassClient;
     }
 
-    private get paymentMethod(): PaymentMethod {
+    private _getpaymentMethod(): PaymentMethod {
         if (!this._paymentMethod) {
             throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
         }
@@ -129,7 +128,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
         return this._paymentMethod;
     }
 
-    private get checkout(): Checkout {
+    private _getcheckout(): Checkout {
         if (!this._checkout) {
             throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }

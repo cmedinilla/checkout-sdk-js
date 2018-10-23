@@ -49,7 +49,6 @@ export default function createCheckoutButtonRegistry(
         new MasterpassButtonStrategy(
             store,
             checkoutActionCreator,
-            paymentMethodActionCreator,
             new MasterpassScriptLoader(scriptLoader)
         )
     );
