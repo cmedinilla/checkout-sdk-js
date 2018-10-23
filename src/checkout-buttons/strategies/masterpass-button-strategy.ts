@@ -3,10 +3,12 @@ import { Checkout, CheckoutActionCreator, CheckoutStore } from '../../checkout';
 import {
     InvalidArgumentError,
     MissingDataError,
-    MissingDataErrorType
+    MissingDataErrorType,
+    NotInitializedError,
+    NotInitializedErrorType
 } from '../../common/error/errors';
 import { bindDecorator as bind } from '../../common/utility';
-import { PaymentMethod, PaymentMethodActionCreator } from '../../payment';
+import { PaymentMethod } from '../../payment';
 import {
     Masterpass,
     MasterpassCheckoutOptions,
@@ -96,12 +98,15 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
     }
 
     private _createMasterpassPayload(): MasterpassCheckoutOptions {
+        const paymentMethod = this._getpaymentMethod();
+        const checkout = this._getcheckout();
+
         return {
-            checkoutId: this._getpaymentMethod().initializationData.checkoutId,
-            allowedCardTypes: this._getpaymentMethod().initializationData.allowedCardTypes,
-            amount: this._getcheckout().cart.cartAmount.toString(),
-            currency: this._getcheckout().cart.currency.code,
-            cartId: this._getcheckout().cart.id,
+            checkoutId: paymentMethod.initializationData.checkoutId,
+            allowedCardTypes: paymentMethod.initializationData.allowedCardTypes,
+            amount: checkout.cart.cartAmount.toString(),
+            currency: checkout.cart.currency.code,
+            cartId: checkout.cart.id,
             suppressShippingAddress: true,
         };
     }
@@ -114,7 +119,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
 
     private _getmasterpassClient(): Masterpass {
         if (!this._masterpassClient) {
-            throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
+            throw new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized);
         }
 
         return this._masterpassClient;
