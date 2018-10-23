@@ -138,7 +138,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
         }
 
         const checkout = this._stateCheckout.checkout.getCheckout();
-        if (!checkout || checkout.cart.id) {
+        if (!checkout || !checkout.cart.id) {
             throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
 
