@@ -59,16 +59,16 @@ export default class ZipPaymentStrategy implements PaymentStrategy {
             throw new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized);
         }
 
-        return this._store.dispatch(this._paymentMethodActionCreator.loadPaymentMethod(payment.methodId))
-            .then(state => {
-                this._paymentMethod = state.paymentMethods.getPaymentMethod(payment.methodId);
-
-                if (!this._paymentMethod || !this._paymentMethod.clientToken) {
-                    throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
-                }
-            })
+        return this._store.dispatch(this._orderActionCreator.submitOrder(order, options))
             .then(()  => {
-                return this._store.dispatch(this._orderActionCreator.submitOrder(order, options))
+                return this._store.dispatch(this._paymentMethodActionCreator.loadPaymentMethod(payment.methodId, options))
+                    .then(state => {
+                        this._paymentMethod = state.paymentMethods.getPaymentMethod(payment.methodId);
+
+                        if (!this._paymentMethod || !this._paymentMethod.clientToken) {
+                            throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
+                        }
+                    })
                     .then(() => new Promise<string>((resolve, reject) => {
                         zipClient.Checkout.init({
                             onComplete: ({ checkoutId, state }) => {
