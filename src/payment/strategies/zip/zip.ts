@@ -12,6 +12,7 @@ export interface ZipCheckout {
 }
 
 export interface ZipPayload {
+    redirect: boolean;
     /**
      * Callback function that is called when the lightbox flow is completed.
      * This function must handle the checkoutId submission.

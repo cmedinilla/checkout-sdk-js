@@ -77,6 +77,7 @@ export default class ZipPaymentStrategy implements PaymentStrategy {
 
         const nonce = await new Promise<string | undefined>((resolve, reject) => {
             zipClient.Checkout.init({
+                redirect: true,
                 onComplete: async ({ checkoutId, state }) => {
                     if (state === ZipModalEvent.CancelCheckout) {
                         return reject(new PaymentMethodCancelledError());
